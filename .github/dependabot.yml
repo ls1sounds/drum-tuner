@@ -1,0 +1,11 @@
+# Keeps the pinned GitHub Actions and test tools up to date with security fixes.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /tests
+    schedule:
+      interval: monthly
