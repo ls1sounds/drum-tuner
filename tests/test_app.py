@@ -8,6 +8,7 @@ and the app works offline.
     pip install playwright numpy
     python tests/test_app.py           (screenshots go to tests/screenshots/)
 """
+import contextlib
 import json
 import os
 import re
@@ -23,6 +24,7 @@ PHONE = {"viewport": {"width": 412, "height": 915}, "device_scale_factor": 2,
          "is_mobile": True, "has_touch": True}
 
 failures = []
+APP_PATH = "/app/"  # where the app lives under `base`
 
 
 def check(cond, name, detail=""):
@@ -75,7 +77,7 @@ def run_flow(base, b, tmp):
     ctx = new_context(b)
     page = ctx.new_page()
     watch_errors(page, errors)
-    app = base + "/app/"
+    app = base + APP_PATH
     page.goto(app)
 
     # --- first run lands on setup -----------------------------------------
@@ -144,7 +146,7 @@ def run_mic(base, tmp, wav, f0, step_label, strike, expect_lugs=False):
         ctx = new_context(b, permissions=["microphone"])
         page = ctx.new_page()
         watch_errors(page, errors)
-        page.goto(base + "/app/")
+        page.goto(base + APP_PATH)
         page.wait_for_selector("text=Save kit")
         page.click("text=Save kit")
         page.locator(".drum-card", has_text="Rack tom 2").click()   # 12" tom
@@ -181,7 +183,7 @@ def run_security(base, b):
     ctx = new_context(b)
     page = ctx.new_page()
     watch_errors(page, errors)
-    app = base + "/app/"
+    app = base + APP_PATH
     page.goto(app)
     page.wait_for_selector("text=Your kit")
 
@@ -257,7 +259,7 @@ def run_security(base, b):
 def run_offline(base, b):
     ctx = new_context(b)
     page = ctx.new_page()
-    page.goto(base + "/app/")
+    page.goto(base + APP_PATH)
     page.wait_for_selector("text=Your kit")
     page.click("text=Save kit")
     page.evaluate("() => navigator.serviceWorker.ready.then(() => true)")
@@ -281,8 +283,16 @@ def run_offline(base, b):
 
 
 def main():
+    global APP_PATH
     tmp = tempfile.mkdtemp(prefix="drumtest-")
-    with serve() as base:
+    live = None
+    if len(sys.argv) > 2 and sys.argv[1] == "--live":
+        # e.g. python test_app.py --live https://you.github.io/drum-tuner/
+        from urllib.parse import urlsplit
+        u = urlsplit(sys.argv[2])
+        live = f"{u.scheme}://{u.netloc}"
+        APP_PATH = u.path if u.path.endswith("/") else u.path + "/"
+    with (contextlib.nullcontext(live) if live else serve()) as base:
         with browser() as b:
             run_flow(base, b, tmp)
             run_security(base, b)

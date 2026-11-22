@@ -84,6 +84,7 @@ python -m http.server 8000
 pip install -r tests/requirements.txt
 python tests/test_detector.py   # accuracy on synthetic drum hits
 python tests/test_app.py        # full app in Chrome with a fake microphone + security checks
+python tests/test_app.py --live https://ls1sounds.github.io/drum-tuner/   # same, against the live site
 ```
 
 `test_app.py` saves screenshots to `tests/screenshots/`.
